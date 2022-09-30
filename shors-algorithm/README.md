@@ -98,4 +98,63 @@ $$\frac{1}{\frac{1}{p}} = p$$
 And now, referring back to the 3 problems from before, as long as $p$ is even, and as long as $g^{\frac{p}{2}} \plusmn 1$ is *not* directly a multiple of $N$, then $g^{\frac{p}{2}} \plusmn 1$ shares factors with $N$. If that's the case, we can use Euclid's algorithm to *find* those factors $a$ and $b$ which are ultimately the factors providing the security for public key infrastructure. 
 
 # Implementation in Qiskit
-The Qiskit implementation of Shor's algorithm can be found in this folder's [main.py](main.py). The implementation is documented in more detail in the [official Qiskit documentation](https://qiskit.org/textbook/ch-algorithms/shor.html) 
+The Qiskit implementation of Shor's algorithm can be found in this folder's [main.py](main.py). The implementation is documented in more detail in the [official Qiskit documentation](https://qiskit.org/textbook/ch-algorithms/shor.html).
+
+## Subproblems
+As discussed in the above outline of the theory underlying Shor's algorithm, we'll need to address a few subproblems to implement the algorithm in Qiskit.
+
+### Period Finding
+First, we'll need to solve the **period finding problem**, i.e., we need to find the power $p$ such that our guess $g$ raised to the power $p$ gives a multiple $m$ of the large number $N$ plus 1, or 
+$$ g^p = m * N + 1$$
+ 
+With the periodic function 
+$$f(x) = g^x \text{ mod } N$$
+$g$ is less than $N$ and the two have no common factors (i.e. $g$ is a "bad guess" as described previously). The *period* $p$ is the smallest non-zero integer such that 
+$$g^p = m * N + 1 \implies g^p \text{ mod } N = 1$$
+
+### A quick note on [Quantum Phase Estimation](https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html)
+First, since quantum phase estimation is defined on a unitary operator $\hat{U}$, let's define a unitary operator. As documented [here](http://vergil.chemistry.gatech.edu/notes/quantrev/node17.html), a unitary operator $\hat{U}$ is "some operator that preserves the **lengths** and **angles** between vectors and can be thought of as a type of rotation operator in abstract vector space." Or, in shorter mathematical terms, a unitary operator U is an operator whose inverse is equal to its adjoint: $\hat{U}^{-1} = \hat{U}^{\dagger}$. Matrix inversion is discussed in more detail [here](https://www.mathsisfun.com/algebra/matrix-inverse.html) and matrix adjoints (AKA conjugate transposes of matrices) are discussed in more detail [here](https://en.wikipedia.org/wiki/Conjugate_transpose).
+ 
+
+As documented at the link above, quantum phase estimation is "one of the most important subroutines in quantum computing." Used by many different quantum algorithms (like Shor's), its objective is as follows: Given a unitary operator $U$ the algorithm estimates $\theta$ in $U| \psi\rangle = e^{2 \pi i \theta }| \psi\rangle$, where $| \psi \rangle$ is an eigenvector and $e^{2 \pi i \theta }$ is the corresponding eigenvalue of that eigenvector. In short, we're estimating eigenvalues of a unitary operator. Since $U$ is unitary, all of its eigenvalues have a norm (length) of 1. 
+
+So, Shor's solution to the **period finding problem** was to use quantum phase estimation on the unitary operator: 
+$$U| y \rangle = | gy \text{ mod } N \rangle$$
+
+If we start with our register in the state $|1 \rangle$, each successive application of $U$ multiplies the current state of our register by $a \text{ (mod } N)$. After $r$ applications of that multiplication, the register arrives back at the original state $|1 \rangle$. For example, if our initial guess $g$ is 3 and $N$ is 35, and $p$ is the period we are trying to find:
+$$U|1\rangle = | 3 \rangle$$
+$$U^2|1\rangle = | 9 \rangle$$
+$$U^3|1\rangle = | 27 \rangle$$
+$$ ... $$
+$$U^{(p - 1)}|1\rangle = | 12 \rangle$$
+$$U^p|1\rangle = | 1 \rangle$$
+
+The above cycle indicates that a superposition of states *in that cycle* ($|u_o\rangle$) would be an eigenstate of $U$. Or, mathematically speaking, 
+$$|u_o\rangle = \frac{1}{\sqrt{p}} \sum_{k=0}^{p-1} | g^k \text{ mod } N$$
+where p is the period of the superposition we're interested in finding. 
+
+Note that if we refer back to our definition of the quantum phase estimation equation, we are currently using an eigenvalue of 1 (i.e., $e^{2 \pi i \theta } = 1$) for this eigenstate (the superposition of states in the cycle), meaning the phase is the same for each basis state. 
+
+Let's generalize this to capture an eigenstate where the phase is *different* for each basis state. Specifically, we can focus on the case where the phase of the $k$th state is proportional to $k$. 
+
+$$|u_1\rangle = \frac{1}{\sqrt{p}} \sum_{k=0}^{p-1} e^{-\frac{2 \pi i k}{p}} | g^k \text { mod } N$$
+
+When expressed this way, the estimated eigenvalue
+
+$$ U|u_1 \rangle = e^{\frac{2 \pi i }{p}}|u_1 \rangle$$
+contains the period $p$ which we're looking for. The presence of $p$ in the quantum phase estimation ensures that the phase differences between the $p$ different basis states are equal. To further generalize, we can multiply the phase difference by some integer $s$:
+
+$$|u_s\rangle = \frac{1}{\sqrt{p}} \sum_{k=0}^{p-1} e^{-\frac{2 \pi i s k}{p}} | g^k \text { mod } N$$
+$$ U|u_s \rangle = e^{\frac{2 \pi i s }{p}}|u_s \rangle$$
+
+This gives a unique eigenstate for each integer value of $s$ where $0 \leq s \leq p - 1$. Keeping in mind that $p$ is the period we're looking for such that our guess $g$ raised to $p$ gives a multiple $m$ of $N$ plus 1, or $g^p = m*N + 1$. 
+
+If we take the summation of those eigenstates, the different phases cancel out all computational basis states except $| 1\rangle$ as expressed below:
+$$\frac{1}{\sqrt{p}}\sum_{s=0}^{p-1} |u_s \rangle = |1 \rangle$$
+
+This is similar to the previously discussed step of getting the "left-over" superposition $S$ from the measurement of some single remainder value $r$, e.g., $r=3$, such that $S$ includes only the states that could have produced $r$ as the measurement result. That basis state $|1 \rangle$ is a superposition of eigenstates so doing quantum phase estimation on $U$ using the basis state $| 1 \rangle$ will measure a phase 
+$$\phi = \frac{s}{p}$$
+where again, $s$ is some random integer between 0 and $p - 1$. This corresponds to the previously discussed step of obtaining the frequency of a superposition of superpositions $S$ via a Quantum Fourier Transform, which produces our $f = \frac{1}{p}$ such that we can easily find the period $p$. After this point, we can use the [continued fractions algorithm](https://en.wikipedia.org/wiki/Continued_fraction) on $\phi$ to find the period $p$.  
+
+### Quantum Fourier Transform (QFT)
+We also need to apply the quantum fourier transform to our "superposition of superpositions" as described in the above section such that we can find a frequency ($\frac{1}{p}$) of our superposition obtained from measuring the initial remainder computation. 

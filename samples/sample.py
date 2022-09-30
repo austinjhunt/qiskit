@@ -1,12 +1,14 @@
 # import the qiskit library 
 import qiskit
+# prepare your circuit to run
+from qiskit import IBMQ
  
 # Qiskit quantum circuits libraries
+# prepare a superposition of all possible computation states with 5 qubits
 quantum_circuit = qiskit.circuit.library.QuantumVolume(5)
 quantum_circuit.measure_all()
 quantum_circuit.draw()
-# prepare your circuit to run
-from qiskit import IBMQ
+ 
  
 # Get the API token in
 # https://quantum-computing.ibm.com/
