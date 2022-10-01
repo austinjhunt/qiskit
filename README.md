@@ -1,0 +1,4 @@
+# Quantum Programming with [Qiskit](https://qiskit.org/)
+In this repository I explore quantum programming using [Qiskit](https://qiskit.org/), an open-source SDK for working with quantum computers at the level of pulses, circuits, and application modules. 
+
+I am including in this repository a variety of resources, from [simple code samples](samples/README.md) pulled from [Qiskit documentation](https://qiskit.org/documentation/intro_tutorial1.html), more in-depth and documented code from Qiskit tutorials on things like [circuit basics](https://qiskit.org/documentation/tutorials/circuits/01_circuit_basics.html), and perhaps most interestingly some deeper dives into quantum algorithms like [Shor's Algorithm](shors-algorithm/README.md), with a lot of supporting information in the [README](shors-algorithm/README.md) that aids understanding of the implementation details.

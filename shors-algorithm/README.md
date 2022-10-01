@@ -152,7 +152,7 @@ This gives a unique eigenstate for each integer value of $s$ where $0 \leq s \le
 If we take the summation of those eigenstates, the different phases cancel out all computational basis states except $| 1\rangle$ as expressed below:
 $$\frac{1}{\sqrt{p}}\sum_{s=0}^{p-1} |u_s \rangle = |1 \rangle$$
 
-This is similar to the previously discussed step of getting the "left-over" superposition $S$ from the measurement of some single remainder value $r$, e.g., $r=3$, such that $S$ includes only the states that could have produced $r$ as the measurement result. That basis state $|1 \rangle$ is a superposition of eigenstates so doing quantum phase estimation on $U$ using the basis state $| 1 \rangle$ will measure a phase 
+This is similar to the previously discussed step of getting the "left-over" superposition $S$ from the measurement of some single remainder value $r$, e.g., $r=3$, such that $S$ includes only the states that could have produced $r$ as the measurement result. That basis state $|1 \rangle$ is a superposition of eigenstates so doing quantum phase estimation on the unitary operator $U$ using the basis state $| 1 \rangle$ will measure a phase 
 $$\phi = \frac{s}{p}$$
 where again, $s$ is some random integer between 0 and $p - 1$. This corresponds to the previously discussed step of obtaining the frequency of a superposition of superpositions $S$ via a Quantum Fourier Transform, which produces our $f = \frac{1}{p}$ such that we can easily find the period $p$. After this point, we can use the [continued fractions algorithm](https://en.wikipedia.org/wiki/Continued_fraction) on $\phi$ to find the period $p$.  
 

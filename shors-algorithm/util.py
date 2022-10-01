@@ -21,6 +21,10 @@ def c_amod15(g, p):
     g is some "bad" integer guess between 2 and 14 inclusive, 
     N is 15 (the number whose prime factors we want), and 
     p is such that g^p = m * N + 1 or g^p mod m*N = 1. 
+
+    Tying this back into the README, if we consider our input superposition of all
+    possible values of the power p, we are obtaining an output superposition of all 
+    of the corresponding remainder values defined by r = g^p mod m*N, with N statically set as 15. 
     """
 
     # If g is 3, 5, 6, 9, 10, 12, or 14 raise an error. 
@@ -28,7 +32,7 @@ def c_amod15(g, p):
         raise ValueError("'a' must be 2,4,7,8,11 or 13")
     U = QuantumCircuit(4) 
     ## Repeat the following execution p times to achieve U^p        
-    for iteration in range(p):  
+    for i in range(p):  
         if g in [2,13]: 
             # use SWAP gate (equivalent to a state swap; classical logic gate)
             # to swap qubit 0 with qubit 1, qubit 1 with qubit 2, qubit 2 with qubit 3. 
@@ -65,9 +69,12 @@ def qft_dagger(n):
     
     QFT dagger is the conjugate transpose of the Quantum Fourier Transform,
     where the quantum fourier transform is used to find a frequency of a 
-    given superposition
+    given superposition. 
     """ 
+    # Defining a new quantum circuit of n qubits. 
     circuit = QuantumCircuit(n)
+
+    # for each qubit in the first half of that circuit
     for qubit in range(n//2):
         # Apply a SWAP gate to swap:
         #  qubit 0 with the n - 1 qubit
@@ -75,32 +82,29 @@ def qft_dagger(n):
         #  qubit 2 with the n - 3 qubit
         # ... such that you are inverting the first n qubits
         circuit.swap(qubit, n-qubit-1)
+
+    # for each qubit j in the full circuit
     for j in range(n):
-        # for each qubit j of the first n qubits
-        for m in range(j):
-            # for each qubit preceding j 
+        # for each qubit preceding j 
+        for m in range(j): 
             # apply a Controlled-Phase gate
             # This is a diagonal and symmetric gate that induces a 
-            # phase on the state of the target qubit, depending on the control state.
+            # phase/rotation on the state of the target qubit, depending on the control state.
+            # Define the rotation angle as (-pi) / 2^(j-m)
             rotation_angle = -math.pi/float(2**(j-m))
+            # apply the controlled-phase gate to qubit j using that rotation angle, 
+            # using m as the control qubit, and using j as the target qubit
             circuit.cp(rotation_angle, control_qubit=m, target_qubit=j)
-        # Apply hadamard gate to qubit j to 
-        # put it back into a superposition where p(0) = p(1)
+        
+        # Apply Hadamard gate to qubit j to 
+        # put it into a superposition such that probability of 0 = probability of 1
         circuit.h(j)
+
     # Give the Quantum Fourier Transform Dagger (conjugate transpose) 
     # circuit a name and then return it 
     circuit.name = "QFT†"
     return circuit
-
  
-
-def a2jmodN(a, j, N):
-    """Compute a^{2^j} (mod N) by repeated squaring. 
-    This is to handle the quantum phase estimation step with eigenvalue 1. 
-    """
-    for i in range(j):
-        a = np.mod(a**2, N)
-    return a
 
  
 def assert_g_not_a_trivial_factor_of_N(g, N):
@@ -118,10 +122,13 @@ def qpe_amod15(g):
     We want to find the period p such that g^p = m * N + 1, or g^p mod (m * N) = 1.
     """
     # Here we define the number of "counting qubits" such that we can 'count' on the
-    # first n_count qubits of our circuit.
-    # when defining the circuit, we add an extra 4 qubits for the unitary operator U
-    # to act on. 
+    # first n_count qubits of our circuit. 
     n_count = 8 
+    # Create a quantum circuit; when defining the circuit, 
+    # we add an extra 4 qubits for the unitary operator U
+    # to act on. This will have n_count + 4 quantum registers and just
+    # n_count classical registers. The classical registers are to 
+    # allow the mapping of quantum measurement results to classical bits.
     circuit = QuantumCircuit(4 + n_count, n_count)
 
     # for those first n_count counting qubits, we want to initialize each one 
@@ -129,31 +136,50 @@ def qpe_amod15(g):
     # an H gate (Hadamard gate) transforms the qubit such that
     # the probability of measuring 0 from the qubit is equal to the 
     # probability of measuring 1 from the qubit
+    # Very common initialization step in quantum programming.
     for q in range(n_count):
         circuit.h(q) 
 
-    # apply single-qubit Pauli-X gate to the 3rd qubit after the first n_count qubits
+    # apply single-qubit Pauli-X gate to the last qubit.
     # the Pauli-X gate is equivalent to a classical bit flip, i.e. where 0 becomes 1 and
-    # 1 becomes 0 
+    # 1 becomes 0.
     circuit.x(3+n_count) 
 
-    # For each of the n_count counting qubits, do controlled U operations 
-    for qubit in range(n_count): # Do controlled-U operations
+    # For each of the n_count "counting qubits", do controlled U operations 
+    for qubit in range(n_count): 
+        # for qubit i, append to the circuit a controlled U gate 
+        # representing U^(2^i) repeated g mod 15 circuits (with each repetition multiplying on itself)
+        # we ultimately want to obtain a phase s / p where g^p mod N = 1. 
+        # This allows us to represent a superposition of all remainders r where 
+        # each r_i = (guess ^ 2^i) mod N, with N = 15.
+        # We can then use that superposition of all remainders to find a period as discussed in the README.
         circuit.append(
             c_amod15(g, 2**qubit),  [qubit] + [i+n_count for i in range(4)])
 
+    # We now have a superposition of all remainders r. 
+    # We want to use the Quantum Fourier Transform to obtain a frequency from that superposition/wave function.
+    # first, we need to append a QFTDagger gate (conjugate transpose of the QFT) to the circuit
+    # to apply the inverse of the Quantum Fourier Transformation 
+    # to the first n_count qubits of the circuit as defined above.
     circuit.append(qft_dagger(n_count), range(n_count)) # Do inverse-QFT
 
+    # We want to measure the results from the first n_count qubits, and 
+    # map those results into corresponding n_count classical bits of our quantum circuit.
     circuit.measure(range(n_count), range(n_count))
 
-    # Simulate Results
+    # We use the AER simulator to simulate results. 
     aer_sim = Aer.get_backend('aer_simulator')
     # Setting memory=True below allows us to see a list of each sequential reading
     t_circuit = transpile(circuit, aer_sim)
     qobj = assemble(t_circuit, shots=1)
+    # Obtain the result from the simulation and print / display those results.
     result = aer_sim.run(qobj, memory=True).result()
     readings = result.get_memory()
     print("Register Reading: " + readings[0])
+    
+    # Cast the register reading to an integer and divide by 2 to the power of n_count
+    # to get the phase, which corresponds to the frequency obtained from the QFT as discussed
+    # in the README, where the frequency is 1/p, and p is the value we want. 
     phase = int(readings[0],2)/(2**n_count)
     print("Corresponding Phase: %f" % phase)
     return phase
