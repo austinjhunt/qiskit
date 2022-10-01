@@ -1,4 +1,16 @@
-# Shor's Algorithm 
+# Shor's Algorithm in Qiskit
+
+For the first programming assignment of CS 8395-50 Special Topics: Quantum Computing at [Vanderbilt University](https://vanderbilt.edu), I have chosen to implement [Shor's algorithm](https://en.wikipedia.org/wiki/Shor%27s_algorithm) using [Qiskit](https://qiskit.org), an open-source software development kit (SDK) for working with quantum computers at the level of pulses, circuits, and application modules.
+
+My original intention was to use [Quantum Inspire](https://www.quantum-inspire.com/) but their web application was not allowing me to create an account or authenticate (ultimately their email system was not sending any verification emails), so I switched directions. [Qiskit](https://qiskit.org) was the next top recommendation from Dr. Easttom during the live session on 9/22/2022. One of the key advantages of Qiskit highlighted is the availability of tons of online data, sample code, books, and other resources to aid with understanding its use. 
+
+I chose to study and implement Shor's algorithm because it's famously a threat to the [RSA encryption algorithm](https://en.wikipedia.org/wiki/RSA_(cryptosystem)), which is one of the most popular public key encryption algorithms currently in use. As a computer science student and professional, I felt I should at least try to understand how this algorithm works since the threat it poses is a driving force behind the push for quantum-resistant encryption algorithms, like [CRYSTALS-Dilithium](https://pq-crystals.org/dilithium/).
+
+The below documentation dives into the theory behind Shor's algorithm and walks through how it efficiently tackles the problem of factoring large integers - a problem on which much of the internet's security depends. 
+
+It's worth noting that major limiting factors preventing this algorithm from completely ruining the internet include issues like the availability of memory for quantum computers and deeper issues like [**quantum decoherence**](https://blogs.scientificamerican.com/observations/decoherence-is-a-problem-for-quantum-computing-but/#:~:text=These%20errors%20arise%20from%20decoherence,quantum%20computer%20to%20be%20lost.), i.e., the undesired loss of information caused by environmentally-induced changes to quantum states. More generally, contrary to classical computing in which information processing is treated *deterministically* (i.e., this bit *is* either 0 or 1), everything in quantum computing is probabilistic (i.e., this bit is *probably 0* or *probably 1*), which acts as both the core advantage and disadvantage for the domain.
+
+[This minutephysics YouTube video](https://www.youtube.com/watch?v=lvTqbM5Dq4Q) was a very helpful resource in putting this documentation together. They walk through how Shor's algorithm works in a very visual way that makes it clear how the algorithm stands to crack modern encryption algorithms.
 
 ## Overview
 
