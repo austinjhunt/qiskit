@@ -9,7 +9,18 @@ base_dir = os.path.dirname(__file__)
 
 def run_shors(N): 
     """ Run shors algorithm to leverage quantum computing 
-    to find prime factors of large number N """
+    to find prime factors of large number N.
+    Using shor's involves setting some requirements around the guessed values
+    of N's factors. Specifically, they can't be trivial factors of N. 
+    Also, the period p such that the guess ^ p mod m * N = 1 must be even.
+    When these criteria are not met, the process must be restarted with a new initial 
+    guess g. The reasoning behind these criteria is outlined in the README of this folder. 
+
+    NOTE: Although I have parameterized N (the number to be factored), this currently 
+    will only work with N = 15 due to the underlying dependent methods shown in the 
+    official documentation. 
+
+    """
     attempt = 0
     factor_found = False 
     # Re-attempt until factor successfully identified
@@ -60,11 +71,13 @@ def run_shors(N):
                     if guess not in [1,N] and (N % guess) == 0: # Check to see if guess is a non-trivial factor of N
                         print("*** Non-trivial factor found: %i ***" % guess)
                         factor_found = True
-                        print(f'Total attempts needed: {attempt}')
+                print(f'Total attempts needed: {attempt}')
             else: 
                 print(f'Period p = {p} is not even. Re-attempting factorization.')
         else: 
             print(f'phase returned from Quantum Phase Estimation is 0. Re-attempting factorization.')
+
+
 
 # Run shor's algorithm on N = 15
 run_shors(N=15)

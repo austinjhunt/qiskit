@@ -12,6 +12,15 @@ from fractions import Fraction
 import os 
 base_dir = os.path.dirname(__file__) 
 
+def a2jmodN(a, j, N):
+    """Compute a^{2^j} (mod N) by repeated squaring. 
+    This method is intended to provide some scalability to this algorithm 
+    by removing the statically set N=15 requirement. This is not currently used
+    as I am not yet sure where to leverage it. 
+    """
+    for i in range(j):
+        a = np.mod(a**2, N)
+    return a
 
 def c_amod15(g, p):
     """  
@@ -32,7 +41,7 @@ def c_amod15(g, p):
         raise ValueError("'a' must be 2,4,7,8,11 or 13")
     U = QuantumCircuit(4) 
     ## Repeat the following execution p times to achieve U^p        
-    for i in range(p):  
+    for i in range(p):   
         if g in [2,13]: 
             # use SWAP gate (equivalent to a state swap; classical logic gate)
             # to swap qubit 0 with qubit 1, qubit 1 with qubit 2, qubit 2 with qubit 3. 
@@ -117,7 +126,8 @@ def assert_g_not_a_trivial_factor_of_N(g, N):
     assert (gcd(g, N) == 1)
 
 def qpe_amod15(g):
-    """ Period, or "order", finding algorithm for some "bad" integer guess g
+    """ 
+    Apply quantum phase estimation to estimate the phase for some "bad" integer guess g
     and some large number N whose factors need to be determined. 
     We want to find the period p such that g^p = m * N + 1, or g^p mod (m * N) = 1.
     """
@@ -176,10 +186,11 @@ def qpe_amod15(g):
     result = aer_sim.run(qobj, memory=True).result()
     readings = result.get_memory()
     print("Register Reading: " + readings[0])
-    
+
     # Cast the register reading to an integer and divide by 2 to the power of n_count
     # to get the phase, which corresponds to the frequency obtained from the QFT as discussed
     # in the README, where the frequency is 1/p, and p is the value we want. 
     phase = int(readings[0],2)/(2**n_count)
     print("Corresponding Phase: %f" % phase)
     return phase
+ 
